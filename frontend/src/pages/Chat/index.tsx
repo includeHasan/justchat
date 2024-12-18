@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+// import { useEffect } from 'react';
 import { ChatProvider } from '@/contexts/ChatContext';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import ChatList from './ChatList';

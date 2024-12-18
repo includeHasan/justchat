@@ -2,7 +2,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { useChat } from '@/contexts/ChatContext';
-import type { Chat } from '@/lib/types';
+// import type { Chat } from '@/lib/types';
 
 export default function ChatList() {
   const { chats, activeChat, setActiveChat } = useChat();
