@@ -22,7 +22,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      const newSocket = io('http://localhost:5000', {
+      const newSocket = io('https://justchat-x1jh.onrender.com', {
         auth: {
           token: localStorage.getItem('token'),
         },
