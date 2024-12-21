@@ -21,7 +21,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [chats, setChats] = useState<Chat[]>([]); // Initialize as empty array
   const [messages, setMessages] = useState<Message[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -120,7 +120,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         messages,
         setActiveChat,
         sendMessage,
-        error, // Add error to context if needed
+        error: null,
       }}
     >
       {children}
