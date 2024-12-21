@@ -13,6 +13,7 @@ const socketIo = require('socket.io');
 const http = require('http');
 const adminRoutes = require('./routes/adminRoutes');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 
 
 
@@ -32,6 +33,8 @@ app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
 app.use(passport.initialize());
 app.use(morgan('dev'));
+app.use(cookieParser());
+
 // Socket.IO Configuration
 const socketService = new SocketService(io);
 io.on('connection', (socket) => {
@@ -39,6 +42,7 @@ io.on('connection', (socket) => {
   });
   
 io.use(socketAuthMiddleware);
+
 // Connect to Database
 connectDB();
 

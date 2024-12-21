@@ -5,7 +5,8 @@ const {
   updateProfile,
   getProfile,
   changePassword,
-  deleteAccount
+  deleteAccount,
+  getAllUsers  // Add this
 } = require('../controllers/userController');
 
 // Profile routes
@@ -16,5 +17,7 @@ router.get('/profile', getProfile);
 router.put('/profile', updateProfile);
 router.put('/change-password', changePassword);
 router.delete('/account', deleteAccount);
+router.get('/all', getAllUsers);
+
 
 module.exports = router;

@@ -3,12 +3,26 @@ const asyncHandler = require('../utils/asyncHandler');
 
 // Get user profile
 exports.getProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user.id).select('-password');
-  
-  res.json({
-    success: true,
-    data: user
-  });
+  try {
+    console.log(req.user);
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server Error'
+    });
+  }
 });
 
 // Update user profile
@@ -79,4 +93,25 @@ exports.deleteAccount = asyncHandler(async (req, res) => {
     success: true,
     message: 'Account deleted successfully'
   });
+});
+
+// Get all users except current user
+exports.getAllUsers = asyncHandler(async (req, res) => {
+  try {
+    const users = await User.find({ 
+      _id: { $ne: req.user.id },  // Exclude current user
+      isBlocked: false  // Only get non-blocked users
+    })
+    .select('name email');  // Only return necessary fields
+    
+    res.json({
+      success: true,
+      data: users
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server Error'
+    });
+  }
 });

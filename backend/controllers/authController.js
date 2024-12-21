@@ -17,7 +17,7 @@ const generateToken = (user) => {
 // Add login rate limiter
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts
+  max: 10, // 5 attempts
   message: { message: 'Too many login attempts. Please try again later.' }
 });
 
@@ -84,16 +84,22 @@ exports.signup = async (req, res) => {
     const user = new User({ name, email, mobileNo, password });
     await user.save();
 
-    // Generate token
+    // Generate token and set cookie
     const token = generateToken(user);
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
 
     res.status(201).json({
       message: 'User registered successfully',
-      token,
       user: { 
         id: user._id, 
         name: user.name, 
-        email: user.email 
+        email: user.email,
+        role: user.role,
+        mobileNo: user.mobileNo
       }
     });
   } catch (error) {
@@ -107,50 +113,59 @@ exports.signup = async (req, res) => {
 // Login Controller
 exports.login = async (req, res) => {
   try {
-    const { login, password } = req.body;
+    const { email, password } = req.body;
 
-    // Apply rate limiter
-    loginLimiter(req, res, async () => {
-      // Find user by email or mobile number
-      const user = await User.findOne({
-        $or: [
-          { email: login },
-          { mobileNo: login }
-        ]
-      });
+    // Find user by email
+    const user = await User.findOne({ email });
 
-      if (!user) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check password
+    const isMatch = await user.comparePassword(password);
+    
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check if user is blocked
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'User account is blocked' });
+    }
+
+    // Generate token and set cookie
+    const token = generateToken(user);
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+
+    res.json({
+      success: true,
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email,
+        role: user.role,
+        mobileNo: user.mobileNo
       }
-
-      // Check password
-      const isMatch = await user.comparePassword(password);
-      
-      if (!isMatch) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-
-      // Check if user is blocked
-      if (user.isBlocked) {
-        return res.status(403).json({ message: 'User account is blocked' });
-      }
-
-      // Generate token
-      const token = generateToken(user);
-
-      res.json({
-        token,
-        user: { 
-          id: user._id, 
-          name: user.name, 
-          email: user.email 
-        }
-      });
     });
   } catch (error) {
     console.error('Login Error:', error);
     res.status(500).json({ 
+      success: false,
       message: 'Server error during login'
     });
   }
+};
+
+// Add logout controller
+exports.logout = (req, res) => {
+  res.cookie('token', '', {
+    httpOnly: true,
+    expires: new Date(0)
+  });
+  res.status(200).json({ message: 'Logged out successfully' });
 };
