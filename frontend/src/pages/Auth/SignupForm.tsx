@@ -38,7 +38,7 @@ export default function SignupForm() {
     try {
       const payload = { ...data, role: isAdmin ? 'admin' : 'user' }; // Include role in the payload
       const response = await api.post('/auth/signup', payload);
-      login(response.data.token, response.data.user);
+      login(response.data.token," ", response.data.user);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Signup failed');
     }

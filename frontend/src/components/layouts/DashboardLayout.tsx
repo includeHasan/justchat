@@ -24,7 +24,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <aside className="w-64 bg-white border-r border-gray-200">
           <div className="h-full px-3 py-4 flex flex-col">
             <div className="mb-8 px-3">
-              <h2 className="text-xl font-bold">Admin Panel</h2>
+              <h2 className="text-xl font-bold">{user?.role} Panel</h2>
             </div>
             
             <nav className="flex-1 space-y-2">

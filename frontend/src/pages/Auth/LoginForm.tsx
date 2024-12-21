@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import type { LoginFormData } from '@/lib/types';
+import { useNavigate } from 'react-router-dom';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -18,6 +19,7 @@ const loginSchema = z.object({
 export default function LoginForm() {
   const { login } = useAuth();
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -29,8 +31,13 @@ export default function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      const response = await api.post('/auth/login', data);
-      login(response.data.token, response.data.user);
+      const response = await api.post('/auth/login', data, { withCredentials: true });
+      if (response.data.success) {
+        login(response.data.user);
+        navigate('/dashboard');
+      } else {
+        setError('Login failed. Please try again.');
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
     }

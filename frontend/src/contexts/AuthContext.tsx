@@ -5,47 +5,76 @@ import api from '@/lib/api';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (token: string, userData: User) => void;
+  login: (userData: User) => void;
   logout: () => void;
-  updateUser: (userData: User) => void;
+  updateUser: (userData: User) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+interface UserResponse {
+  user: User;
+  success: boolean;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      api.get('/user/profile')
-        .then(response => {
-          setUser(response.data.user);
-        })
-        .catch(() => {
-          localStorage.removeItem('token');
-        })
-        .finally(() => {
-          setLoading(false);
+    const checkAuth = async () => {
+      try {
+        const response = await api.get<UserResponse>('/user/profile', { 
+          withCredentials: true,
+          headers: {
+            'Cache-Control': 'no-cache',
+          }
         });
-    } else {
-      setLoading(false);
-    }
+        
+        if (response.data?.success && response.data?.user) {
+          setUser(response.data.user);
+        } else {
+          setUser(null);
+        }
+      } catch (error: any) {
+        console.error('Auth check failed:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
-  const login = (token: string, userData: User) => {
-    localStorage.setItem('token', token);
+  const login = (userData: User) => {
     setUser(userData);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout', {}, { withCredentials: true });
+      setUser(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
-  const updateUser = (userData: User) => {
-    setUser(userData);
+  const updateUser = async (userData: User) => {
+    try {
+      const response = await api.put<UserResponse>('/user/profile', userData, { 
+        withCredentials: true 
+      });
+      
+      if (response.data?.success && response.data?.user) {
+        setUser(response.data.user);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('User update failed:', error);
+      return false;
+    }
   };
 
   return (

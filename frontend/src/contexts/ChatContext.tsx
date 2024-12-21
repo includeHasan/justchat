@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import type { Chat, Message } from '@/lib/types';
+import api from '@/lib/api';
 
 interface ChatContextType {
   activeChat: Chat | null;
@@ -9,6 +10,7 @@ interface ChatContextType {
   messages: Message[];
   setActiveChat: (chat: Chat | null) => void;
   sendMessage: (content: string, attachments?: File[]) => Promise<void>;
+  error: string | null;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -17,12 +19,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
-  // const [chats, setChats] = useState<Chat[]>([]);
+  const [chats, setChats] = useState<Chat[]>([]); // Initialize as empty array
   const [messages, setMessages] = useState<Message[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
-      const newSocket = io('https://justchat-x1jh.onrender.com', {
+      const newSocket = io(import.meta.env.VITE_backend_url, {
         auth: {
           token: localStorage.getItem('token'),
         },
@@ -39,6 +42,45 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       };
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchChats();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (activeChat) {
+      fetchMessages(activeChat.id);
+    }
+  }, [activeChat]);
+
+  const fetchChats = async () => {
+    try {
+      const response = await api.get('/chats');
+      // Handle the nested data structure properly
+      const chatsData = response.data?.data || [];
+      if (Array.isArray(chatsData)) {
+        setChats(chatsData);
+      } else {
+        console.error('Invalid chat data format');
+        setChats([]);
+      }
+    } catch (error) {
+      console.error('Error fetching chats:', error);
+      setChats([]);
+    }
+  };
+
+  const fetchMessages = async (chatId: string) => {
+    const response = await fetch(`${import.meta.env.VITE_backend_url}/chat/${chatId}/messages`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    const data = await response.json();
+    setMessages(data);
+  };
 
   const sendMessage = async (content: string, attachments?: File[]) => {
     if (!socket || !activeChat) return;
@@ -59,7 +101,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   };
 
   const uploadFiles = async (formData: FormData): Promise<string[]> => {
-    const response = await fetch('http://localhost:5000/chat/upload', {
+    const response = await fetch(`${import.meta.env.VITE_backend_url}/chat/upload`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -74,10 +116,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     <ChatContext.Provider
       value={{
         activeChat,
-        chats: [],
+        chats,
         messages,
         setActiveChat,
         sendMessage,
+        error, // Add error to context if needed
       }}
     >
       {children}
