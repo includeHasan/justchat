@@ -7,7 +7,7 @@ import Chat from '@/pages/Chat';
 import Profile from '@/pages/Profile';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminRoute from '@/components/AdminRoute';
-import LoginForm from '@/components/LoginForm';
+
 
 function App() {
   return (
