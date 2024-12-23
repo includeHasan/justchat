@@ -88,7 +88,7 @@ export default function LoginForm() {
           type="button"
           variant="outline"
           className="w-full"
-          onClick={() => window.location.href = '/google'}
+          onClick={() => window.location.href = `${import.meta.env.VITE_backend_url}/auth/google`}
         >
           Continue with Google
         </Button>
